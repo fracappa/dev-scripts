@@ -342,8 +342,11 @@ function configure_dnsmasq() {
   sudo rm -f "${PATH_CONF_DNSMASQ}"
 
   add_dnsmasq_multi_entry "apivip" "${apiVips}"
-  if [[ ${AGENT_E2E_TEST_BOOT_MODE} == "ISO_NO_REGISTRY" ]] && [[ "${NUM_MASTERS}" -gt "1" ]]; then
-    add_dnsmasq_multi_entry "apiintvip" "${apiVips}"
+  if [[ "${NUM_MASTERS}" -gt "1" ]]; then
+    if [[ ${AGENT_E2E_TEST_BOOT_MODE} == "ISO_NO_REGISTRY" ]] || \
+       [[ "${AGENT_PLATFORM_TYPE:-}" == "none" || "${AGENT_PLATFORM_TYPE:-}" == "external" ]]; then
+      add_dnsmasq_multi_entry "apiintvip" "${apiVips}"
+    fi
   fi
   add_dnsmasq_multi_entry "ingressvip" "${ingressVips}"
 
