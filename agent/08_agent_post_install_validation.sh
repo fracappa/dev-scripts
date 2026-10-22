@@ -35,13 +35,31 @@ fi
 
 if [[ "${NUM_WORKERS}" -gt "0" ]] && [[ "${AGENT_PLATFORM_TYPE}" == "none" || "${AGENT_PLATFORM_TYPE}" == "external" ]]; then
   echo "Configuring SingleReplica infrastructure topology for platform ${AGENT_PLATFORM_TYPE} with dedicated workers..."
+
+  echo "Scaling down cluster-config-operator to prevent scheduler revert..."
+  oc scale deployment cluster-config-operator -n openshift-cluster-config-operator --replicas=0
+  oc wait deployment cluster-config-operator -n openshift-cluster-config-operator \
+    --for=jsonpath='{.status.replicas}'=0 --timeout=60s
+
   oc patch scheduler cluster --type=merge -p '{"spec":{"mastersSchedulable": false}}'
   oc patch infrastructure cluster --type=merge --subresource=status \
     -p '{"status":{"infrastructureTopology": "SingleReplica"}}'
-  echo "Waiting for worker label to be removed from masters..."
-  sleep 30
+
+  echo "Waiting for masters to shed worker role..."
+  for (( i=0; i < NUM_MASTERS; i++ )); do
+    node="$(printf "${MASTER_HOSTNAME_FORMAT}" "${i}")"
+    while oc get node "${node}" -o jsonpath='{.metadata.labels}' 2>/dev/null | grep -q node-role.kubernetes.io/worker; do
+      echo "  waiting for ${node} to lose worker label..."
+      sleep 10
+    done
+  done
+
+  echo "Scaling cluster-config-operator back up..."
+  oc scale deployment cluster-config-operator -n openshift-cluster-config-operator --replicas=1
+
   oc get nodes
-  oc get infrastructure cluster -o jsonpath='{.status.infrastructureTopology}{"\n"}'
+  echo "infrastructureTopology: $(oc get infrastructure cluster -o jsonpath='{.status.infrastructureTopology}')"
+  echo "mastersSchedulable: $(oc get scheduler cluster -o jsonpath='{.spec.mastersSchedulable}')"
 fi
 
 installed_control_plane_nodes=$(oc get nodes --selector=node-role.kubernetes.io/master | grep -cv AGE)
