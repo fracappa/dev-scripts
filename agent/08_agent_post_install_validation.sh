@@ -45,17 +45,11 @@ if [[ "${NUM_WORKERS}" -gt "0" ]] && [[ "${AGENT_PLATFORM_TYPE}" == "none" || "$
   oc patch infrastructure cluster --type=merge --subresource=status \
     -p '{"status":{"infrastructureTopology": "SingleReplica"}}'
 
-  echo "Waiting for masters to shed worker role..."
+  echo "Removing worker label from master nodes..."
   for (( i=0; i < NUM_MASTERS; i++ )); do
     node="$(printf "${MASTER_HOSTNAME_FORMAT}" "${i}")"
-    while oc get node "${node}" -o jsonpath='{.metadata.labels}' 2>/dev/null | grep -q node-role.kubernetes.io/worker; do
-      echo "  waiting for ${node} to lose worker label..."
-      sleep 10
-    done
+    oc label node "${node}" node-role.kubernetes.io/worker- 2>/dev/null || true
   done
-
-  echo "Scaling cluster-config-operator back up..."
-  oc scale deployment cluster-config-operator -n openshift-cluster-config-operator --replicas=1
 
   oc get nodes
   echo "infrastructureTopology: $(oc get infrastructure cluster -o jsonpath='{.status.infrastructureTopology}')"
