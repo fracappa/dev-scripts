@@ -33,6 +33,17 @@ if [[ "${AGENT_E2E_TEST_BOOT_MODE}" == "ISO_NO_REGISTRY" ]]; then
     oc get packagemanifests -n openshift-marketplace
 fi
 
+if [[ "${NUM_WORKERS}" -gt "0" ]] && [[ "${AGENT_PLATFORM_TYPE}" == "none" || "${AGENT_PLATFORM_TYPE}" == "external" ]]; then
+  echo "Configuring SingleReplica infrastructure topology for platform ${AGENT_PLATFORM_TYPE} with dedicated workers..."
+  oc patch scheduler cluster --type=merge -p '{"spec":{"mastersSchedulable": false}}'
+  oc patch infrastructure cluster --type=merge --subresource=status \
+    -p '{"status":{"infrastructureTopology": "SingleReplica"}}'
+  echo "Waiting for worker label to be removed from masters..."
+  sleep 30
+  oc get nodes
+  oc get infrastructure cluster -o jsonpath='{.status.infrastructureTopology}{"\n"}'
+fi
+
 installed_control_plane_nodes=$(oc get nodes --selector=node-role.kubernetes.io/master | grep -cv AGE)
 
 oc get nodes

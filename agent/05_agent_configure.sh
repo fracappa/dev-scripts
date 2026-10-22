@@ -256,22 +256,6 @@ data:
   value: agent-test
 EOF
 
-  if [[ "${NUM_WORKERS}" -gt "0" ]] && [[ "${AGENT_PLATFORM_TYPE}" == "none" || "${AGENT_PLATFORM_TYPE}" == "external" ]]; then
-    cat > "${EXTRA_MANIFESTS_PATH}/cluster-infrastructure-02-config.yml" << EOF
-apiVersion: config.openshift.io/v1
-kind: Infrastructure
-metadata:
-  name: cluster
-spec: {}
-status:
-  controlPlaneTopology: HighlyAvailable
-  infrastructureTopology: SingleReplica
-  platform: None
-  platformStatus:
-    type: None
-EOF
-  fi
-
   if [ ! -z "${AGENT_DEPLOY_MCE}" ]; then
     cp "${SCRIPTDIR}"/agent/mce/agent_mce_0_*.yaml "${EXTRA_MANIFESTS_PATH}"
   fi
