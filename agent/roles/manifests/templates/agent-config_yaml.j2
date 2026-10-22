@@ -4,6 +4,7 @@
 {% set ipsv6 = agent_nodes_ipsv6.split(',') %}
 {% set macs = agent_nodes_macs.split(',') %}
 {% set hostnames = agent_nodes_hostnames.split(',') %}
+{% set roles = agent_nodes_roles.split(',') if agent_nodes_roles else [] %}
 {% set test_cases = agent_test_cases.split(',') %}
 apiVersion: v1alpha1
 metadata:
@@ -28,6 +29,9 @@ minimalISO: true
 hosts:
 {% for hostname in hostnames %}
     - hostname: {{ hostname }}
+{% if roles %}
+      role: {{ roles[loop.index0] }}
+{% endif %}
 {% if agent_root_device_hints %}
       rootDeviceHints:
         deviceName: {{ agent_root_device_hints }}

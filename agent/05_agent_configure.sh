@@ -98,6 +98,11 @@ function configure_node() {
 
   if [[ "$node_type" != "extraworker" ]]; then
     AGENT_NODES_HOSTNAMES+=("$hostname")
+    if [[ "$node_type" == "worker" ]]; then
+      AGENT_NODES_ROLES+=("worker")
+    else
+      AGENT_NODES_ROLES+=("master")
+    fi
   else
     AGENT_EXTRA_WORKERS_HOSTNAMES+=("$hostname")
   fi
@@ -156,6 +161,7 @@ function get_static_ips_and_macs() {
     AGENT_NODES_IPSV6=()
     AGENT_NODES_MACS=()
     AGENT_NODES_HOSTNAMES=()
+    AGENT_NODES_ROLES=()
     AGENT_MASTER_MACS=()
     AGENT_EXTRA_WORKERS_IPS=()
     AGENT_EXTRA_WORKERS_IPSV6=()
@@ -192,6 +198,7 @@ function get_baremetal_ips_and_macs() {
     AGENT_NODES_IPSV6=()
     AGENT_NODES_MACS=()
     AGENT_NODES_HOSTNAMES=()
+    AGENT_NODES_ROLES=()
     AGENT_MASTER_HOSTNAMES=()
     AGENT_MASTER_MACS=()
     AGENT_EXTRA_WORKERS_IPS=()
@@ -224,6 +231,7 @@ function get_baremetal_ips_and_macs() {
             AGENT_NODES_IPS+=("$ip")
             AGENT_NODES_MACS+=("$mac")
             AGENT_NODES_HOSTNAMES+=("$hostname")
+            AGENT_NODES_ROLES+=("master")
             AGENT_MASTER_HOSTNAMES+=("$hostname")
             AGENT_MASTER_MACS+=("$mac")
         else
@@ -365,6 +373,8 @@ function generate_cluster_manifests() {
   export AGENT_NODES_MACS_STR=${nodes_macs::-1}
   nodes_hostnames=$(printf '%s,' "${AGENT_NODES_HOSTNAMES[@]}")
   export AGENT_NODES_HOSTNAMES_STR=${nodes_hostnames::-1}
+  nodes_roles=$(printf '%s,' "${AGENT_NODES_ROLES[@]}")
+  export AGENT_NODES_ROLES_STR=${nodes_roles::-1}
 
   master_hostnames=$(printf '%s,' "${AGENT_MASTER_HOSTNAMES[@]}")
   export AGENT_MASTER_HOSTNAMES_STR=${master_hostnames::-1}

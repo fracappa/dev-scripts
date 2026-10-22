@@ -4,6 +4,7 @@
 {% set ipsv6 = agent_nodes_ipsv6.split(',') %}
 {% set macs = agent_nodes_macs.split(',') %}
 {% set hostnames = agent_nodes_hostnames.split(',') %}
+{% set roles = agent_nodes_roles.split(',') if agent_nodes_roles else [] %}
 apiVersion: v1alpha1
 metadata:
   name: {{ cluster_name }}
@@ -19,6 +20,9 @@ bootArtifactsBaseURL: {{ boot_server_url }}
 hosts:
 {% for hostname in hostnames %}
     - hostname: {{ hostname }}
+{% if roles %}
+      role: {{ roles[loop.index0] }}
+{% endif %}
       interfaces:
         - name: eth0
           macAddress: {{ macs[2*loop.index0] }}
