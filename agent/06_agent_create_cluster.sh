@@ -553,28 +553,6 @@ function enable_assisted_service_ui() {
   ssh "${ssh_opts[@]}" "sudo /usr/bin/podman run -d --name=assisted-ui --pod-id-file=/run/assisted-service-pod.pod-id quay.io/edge-infrastructure/assisted-installer-ui:latest"
 }
 
-function patch_scheduler_when_worker_ready() {
-  local kubeconfig="$1"
-  local retries=0
-  local max_retries=120
-
-  echo "Background: waiting for API and worker node before patching scheduler..."
-  while (( retries < max_retries )); do
-    if KUBECONFIG="${kubeconfig}" oc wait node --selector=node-role.kubernetes.io/worker \
-         --for=condition=Ready --timeout=10s 2>/dev/null; then
-      echo "Background: worker node is Ready, patching scheduler to mastersSchedulable: false..."
-      KUBECONFIG="${kubeconfig}" oc patch scheduler cluster --type=merge \
-        -p '{"spec":{"mastersSchedulable": false}}'
-      echo "Background: scheduler patched successfully"
-      return 0
-    fi
-    retries=$((retries + 1))
-    sleep 15
-  done
-  echo "Background: timed out waiting for worker node, scheduler NOT patched"
-  return 1
-}
-
 function wait_for_cluster_ready() {
   local openshift_install
   openshift_install="$(realpath "${OCP_DIR}/openshift-install")"
@@ -582,12 +560,6 @@ function wait_for_cluster_ready() {
   if [[ "${AGENT_USE_APPLIANCE_MODEL}" == true || "${AGENT_E2E_TEST_BOOT_MODE}" == "DISKIMAGE" ]]; then
      dir="${config_image_dir}"
   fi
-
-  if [[ "${NUM_WORKERS}" -gt "0" ]] && [[ "${AGENT_PLATFORM_TYPE}" == "none" || "${AGENT_PLATFORM_TYPE}" == "external" ]]; then
-    patch_scheduler_when_worker_ready "${dir}/auth/kubeconfig" &
-    local scheduler_patch_pid=$!
-  fi
-
   if ! "${openshift_install}" --dir="${dir}" --log-level=debug agent wait-for bootstrap-complete; then
       exit 1
   fi
@@ -602,11 +574,6 @@ function wait_for_cluster_ready() {
   if [ "${PIPESTATUS[0]}" != 0 ]; then
       exit 1
   fi
-
-  if [[ -n "${scheduler_patch_pid:-}" ]]; then
-    wait "${scheduler_patch_pid}" || echo "Warning: scheduler patch background process failed"
-  fi
-
   echo "Cluster is ready!"
 }
 
