@@ -482,7 +482,7 @@ export AGENT_WAIT_FOR_INSTALL_COMPLETE=${AGENT_WAIT_FOR_INSTALL_COMPLETE:-true}
 # Agent specific configuration 
 
 function invalidAgentValue() {
-  printf "Found invalid value \"%s\" for AGENT_E2E_TEST_SCENARIO. Supported values: 'COMPACT_IPXX', 'HA_IPXX', 'SNO_IPXX', 'TNA_IPXX', '4CONTROL_IPXX', or '5CONTROL_IPXX', where XX is 'V4', 'V6', or 'V4V6'" "${AGENT_E2E_TEST_SCENARIO}"
+  printf "Found invalid value \"%s\" for AGENT_E2E_TEST_SCENARIO. Supported values: 'COMPACT_IPXX', 'HA_IPXX', 'HA1W_IPXX', 'SNO_IPXX', 'TNA_IPXX', '4CONTROL_IPXX', or '5CONTROL_IPXX', where XX is 'V4', 'V6', or 'V4V6'" "${AGENT_E2E_TEST_SCENARIO}"
   exit 1
 }
 
@@ -575,6 +575,16 @@ if [[ ! -z ${AGENT_E2E_TEST_SCENARIO} ]]; then
           export WORKER_DISK=${WORKER_DISK:-100}
           export WORKER_MEMORY=${WORKER_MEMORY:-16384}
           ;;
+      "HA1W" )
+          export NUM_MASTERS=3
+          export MASTER_VCPU=${MASTER_VCPU:-4}
+          export MASTER_DISK=${MASTER_DISK:-100}
+          export MASTER_MEMORY=${MASTER_MEMORY:-24576}
+          export NUM_WORKERS=1
+          export WORKER_VCPU=${WORKER_VCPU:-4}
+          export WORKER_DISK=${WORKER_DISK:-100}
+          export WORKER_MEMORY=${WORKER_MEMORY:-16384}
+          ;;
       "SNO" )
           export NUM_MASTERS=1
           export MASTER_VCPU=${MASTER_VCPU:-8}
@@ -620,7 +630,7 @@ if [[ ! -z ${AGENT_E2E_TEST_SCENARIO} ]]; then
         export MASTER_VCPU=16
       fi
     fi
-    if [ "${SCENARIO}" == "HA" ]; then
+    if [ "${SCENARIO}" == "HA" ] || [ "${SCENARIO}" == "HA1W" ]; then
        if ((WORKER_VCPU < 5)); then
         export WORKER_VCPU=5
       fi
@@ -628,7 +638,7 @@ if [[ ! -z ${AGENT_E2E_TEST_SCENARIO} ]]; then
     # Increase disk storage requirements for NoRegistryClusterInstall aka agent OVE ISO
     # Large storage size is used to catch any regression related to https://issues.redhat.com/browse/OCPBUGS-76382.
     case "$SCENARIO" in
-      "SNO"|"COMPACT"|"HA"|"5CONTROL"|"4CONTROL" )
+      "SNO"|"COMPACT"|"HA"|"HA1W"|"5CONTROL"|"4CONTROL" )
           if ((MASTER_DISK < 300)); then
             export MASTER_DISK=300
           fi
