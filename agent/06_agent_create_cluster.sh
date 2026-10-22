@@ -564,6 +564,12 @@ function wait_for_cluster_ready() {
       exit 1
   fi
 
+  if [[ "${NUM_WORKERS}" -gt "0" ]] && [[ "${AGENT_PLATFORM_TYPE}" == "none" || "${AGENT_PLATFORM_TYPE}" == "external" ]]; then
+      echo "Patching scheduler to set mastersSchedulable: false..."
+      export KUBECONFIG="${dir}/auth/kubeconfig"
+      oc patch scheduler cluster --type=merge -p '{"spec":{"mastersSchedulable": false}}'
+  fi
+
   if [ "${AGENT_WAIT_FOR_INSTALL_COMPLETE}" == "false" ]; then
       echo "Skipping agent wait-for install-complete"
       exit 0
