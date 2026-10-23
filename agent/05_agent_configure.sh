@@ -256,6 +256,20 @@ data:
   value: agent-test
 EOF
 
+  if [[ "${AGENT_PLATFORM_TYPE:-}" == "none" || "${AGENT_PLATFORM_TYPE:-}" == "external" ]]; then
+    cat > "${EXTRA_MANIFESTS_PATH}/feature-gate.yaml" << EOF
+apiVersion: config.openshift.io/v1
+kind: FeatureGate
+metadata:
+  name: cluster
+spec:
+  featureSet: CustomNoUpgrade
+  customNoUpgrade:
+    enabled:
+      - MutableTopology
+EOF
+  fi
+
   if [ ! -z "${AGENT_DEPLOY_MCE}" ]; then
     cp "${SCRIPTDIR}"/agent/mce/agent_mce_0_*.yaml "${EXTRA_MANIFESTS_PATH}"
   fi
