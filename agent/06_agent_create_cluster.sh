@@ -41,31 +41,6 @@ function create_image() {
 }
 
 function create_automated_image() {
-    if [[ "${AGENT_INFRA_TOPOLOGY:-}" == "SingleReplica" ]]; then
-        "${openshift_install}" --dir="${asset_dir}" --log-level=debug agent create cluster-manifests
-        local infra_manifest
-        infra_manifest=$(find "${asset_dir}/cluster-manifests" -name "*infrastructure*" -type f 2>/dev/null | head -1)
-        if [[ -n "${infra_manifest}" ]]; then
-            sed -i 's/infrastructureTopology: HighlyAvailable/infrastructureTopology: SingleReplica/' "${infra_manifest}"
-        else
-            cat > "${asset_dir}/cluster-manifests/cluster-infrastructure-02-config.yml" << INFRAEOF
-apiVersion: config.openshift.io/v1
-kind: Infrastructure
-metadata:
-  name: cluster
-spec:
-  platformSpec:
-    type: ${AGENT_PLATFORM_TYPE:-None}
-status:
-  controlPlaneTopology: HighlyAvailable
-  infrastructureTopology: SingleReplica
-  platform: ${AGENT_PLATFORM_TYPE:-None}
-  platformStatus:
-    type: ${AGENT_PLATFORM_TYPE:-None}
-INFRAEOF
-        fi
-        rm -f "${asset_dir}/.openshift_install_state.json"
-    fi
     "${openshift_install}" --dir="${asset_dir}" --log-level=debug agent create image
 }
 

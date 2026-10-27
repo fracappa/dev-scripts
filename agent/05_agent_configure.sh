@@ -248,20 +248,18 @@ data:
   value: agent-test
 EOF
 
-  # TODO: re-enable once assisted-service supports CustomNoUpgrade featureSet
-  # if [[ "${AGENT_INFRA_TOPOLOGY:-}" == "SingleReplica" ]]; then
-  #   cat > "${EXTRA_MANIFESTS_PATH}/feature-gate.yaml" << EOF
-  # apiVersion: config.openshift.io/v1
-  # kind: FeatureGate
-  # metadata:
-  #   name: cluster
-  # spec:
-  #   featureSet: CustomNoUpgrade
-  #   customNoUpgrade:
-  #     enabled:
-  #       - MutableTopology
-  # EOF
-  # fi
+  if [[ "${AGENT_INFRA_TOPOLOGY:-}" == "SingleReplica" ]]; then
+    mkdir -p "${OCP_DIR}/cluster-manifests"
+    cat > "${OCP_DIR}/cluster-manifests/cluster-infrastructure-02-config.yml" << EOF
+apiVersion: config.openshift.io/v1
+kind: Infrastructure
+metadata:
+  name: cluster
+status:
+  controlPlaneTopology: HighlyAvailable
+  infrastructureTopology: SingleReplica
+EOF
+  fi
 
   if [ ! -z "${AGENT_DEPLOY_MCE}" ]; then
     cp "${SCRIPTDIR}"/agent/mce/agent_mce_0_*.yaml "${EXTRA_MANIFESTS_PATH}"

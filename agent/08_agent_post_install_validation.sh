@@ -43,3 +43,20 @@ if (( NUM_MASTERS != installed_control_plane_nodes )); then
 fi
 
 oc get clusterversion
+
+if [[ "${AGENT_INFRA_TOPOLOGY:-}" == "SingleReplica" ]]; then
+  echo "Enabling MutableTopology feature gate via CustomNoUpgrade featureSet..."
+  oc patch featuregate cluster --type merge -p \
+    '{"spec":{"featureSet":"CustomNoUpgrade","customNoUpgrade":{"enabled":["MutableTopology"]}}}'
+
+  echo "Waiting for MCP updates to complete..."
+  oc wait mcp master worker --for=condition=Updating=False --timeout=30m
+
+  echo "Verifying infrastructure topology is SingleReplica..."
+  infra_topology=$(oc get infrastructure cluster -o jsonpath='{.status.infrastructureTopology}')
+  if [[ "${infra_topology}" != "SingleReplica" ]]; then
+    echo "WARNING: Infrastructure topology is '${infra_topology}', expected 'SingleReplica'"
+  else
+    echo "Infrastructure topology correctly set to SingleReplica"
+  fi
+fi
