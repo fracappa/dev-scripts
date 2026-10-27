@@ -260,17 +260,6 @@ spec:
     enabled:
       - MutableTopology
 EOF
-
-    mkdir -p "${OCP_DIR}/cluster-manifests"
-    cat > "${OCP_DIR}/cluster-manifests/cluster-infrastructure-02-config.yml" << EOF
-apiVersion: config.openshift.io/v1
-kind: Infrastructure
-metadata:
-  name: cluster
-status:
-  controlPlaneTopology: HighlyAvailable
-  infrastructureTopology: SingleReplica
-EOF
   fi
 
   if [ ! -z "${AGENT_DEPLOY_MCE}" ]; then

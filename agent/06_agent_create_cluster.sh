@@ -41,6 +41,12 @@ function create_image() {
 }
 
 function create_automated_image() {
+    if [[ "${AGENT_INFRA_TOPOLOGY:-}" == "SingleReplica" ]]; then
+        "${openshift_install}" --dir="${asset_dir}" --log-level=debug agent create cluster-manifests
+        yq -i '.status.infrastructureTopology = "SingleReplica"' \
+            "${asset_dir}/cluster-manifests/cluster-infrastructure-02-config.yml"
+        rm "${asset_dir}/.openshift_install_state.json"
+    fi
     "${openshift_install}" --dir="${asset_dir}" --log-level=debug agent create image
 }
 
