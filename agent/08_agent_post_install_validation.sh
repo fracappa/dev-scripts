@@ -49,14 +49,19 @@ if [[ "${AGENT_INFRA_TOPOLOGY:-}" == "SingleReplica" ]]; then
   oc patch featuregate cluster --type merge -p \
     '{"spec":{"featureSet":"CustomNoUpgrade","customNoUpgrade":{"enabled":["MutableTopology"]}}}'
 
-  echo "Waiting for MCP updates to complete..."
-  oc wait mcp master worker --for=condition=Updating=False --timeout=30m
+  echo "Waiting for MCP updates to complete (this may take 20+ minutes)..."
+  sleep 60
+  oc wait mcp master worker --for=condition=Updated=True --timeout=40m
 
-  echo "Verifying infrastructure topology is SingleReplica..."
+  echo "Patching infrastructure topology to SingleReplica..."
+  oc patch infrastructure cluster --type merge --subresource status -p \
+    '{"status":{"infrastructureTopology":"SingleReplica"}}'
+
+  echo "Verifying infrastructure topology..."
   infra_topology=$(oc get infrastructure cluster -o jsonpath='{.status.infrastructureTopology}')
   if [[ "${infra_topology}" != "SingleReplica" ]]; then
-    echo "WARNING: Infrastructure topology is '${infra_topology}', expected 'SingleReplica'"
-  else
-    echo "Infrastructure topology correctly set to SingleReplica"
+    echo "ERROR: Infrastructure topology is '${infra_topology}', expected 'SingleReplica'"
+    exit 1
   fi
+  echo "Infrastructure topology correctly set to SingleReplica"
 fi
