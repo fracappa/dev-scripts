@@ -45,14 +45,6 @@ fi
 oc get clusterversion
 
 if [[ "${AGENT_INFRA_TOPOLOGY:-}" == "SingleReplica" ]]; then
-  echo "Enabling MutableTopology feature gate via CustomNoUpgrade featureSet..."
-  oc patch featuregate cluster --type merge -p \
-    '{"spec":{"featureSet":"CustomNoUpgrade","customNoUpgrade":{"enabled":["MutableTopology"]}}}'
-
-  echo "Waiting for MCP updates to complete (this may take 20+ minutes)..."
-  sleep 60
-  oc wait mcp master worker --for=condition=Updated=True --timeout=40m
-
   echo "Patching infrastructure topology to SingleReplica..."
   oc patch infrastructure cluster --type merge --subresource status -p \
     '{"status":{"infrastructureTopology":"SingleReplica"}}'
