@@ -45,6 +45,18 @@ fi
 oc get clusterversion
 
 if [[ "${AGENT_INFRA_TOPOLOGY:-}" == "SingleReplica" ]]; then
+  echo "Patching infrastructure topology to SingleReplica..."
+  oc patch infrastructure cluster --type merge --subresource status -p \
+    '{"status":{"infrastructureTopology":"SingleReplica"}}'
+
+  echo "Verifying infrastructure topology..."
+  infra_topology=$(oc get infrastructure cluster -o jsonpath='{.status.infrastructureTopology}')
+  if [[ "${infra_topology}" != "SingleReplica" ]]; then
+    echo "ERROR: Infrastructure topology is '${infra_topology}', expected 'SingleReplica'"
+    exit 1
+  fi
+  echo "Infrastructure topology correctly set to SingleReplica"
+
   echo "Enabling MutableTopology feature gate via CustomNoUpgrade featureSet..."
 
   # Allow all workers to update simultaneously to avoid PDB drain deadlock
@@ -63,16 +75,4 @@ if [[ "${AGENT_INFRA_TOPOLOGY:-}" == "SingleReplica" ]]; then
   if (( NUM_WORKERS > 1 )); then
     oc patch mcp worker --type merge -p '{"spec":{"maxUnavailable":1}}'
   fi
-
-  echo "Patching infrastructure topology to SingleReplica..."
-  oc patch infrastructure cluster --type merge --subresource status -p \
-    '{"status":{"infrastructureTopology":"SingleReplica"}}'
-
-  echo "Verifying infrastructure topology..."
-  infra_topology=$(oc get infrastructure cluster -o jsonpath='{.status.infrastructureTopology}')
-  if [[ "${infra_topology}" != "SingleReplica" ]]; then
-    echo "ERROR: Infrastructure topology is '${infra_topology}', expected 'SingleReplica'"
-    exit 1
-  fi
-  echo "Infrastructure topology correctly set to SingleReplica"
 fi
